@@ -12,6 +12,7 @@ set -ouex pipefail
 # this installs a package from fedora repos
 dnf5 install -y inkscape kitty krita neovim
 dnf5 remove -y konsole kwrite vim
+flatpak install -y --noninteractive com.heroicgameslauncher.hgl
 
 # Use a COPR Example:
 #
