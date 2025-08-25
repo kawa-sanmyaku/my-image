@@ -14,7 +14,7 @@ dnf5 install -y inkscape kitty krita neovim
 dnf5 remove -y konsole kwrite vim
 
 # install flatpaks
-project_root=$(.)
+project_root=$(/)
 flatpak_dir_shortname="default_flatpaks"
 
 # temp space
