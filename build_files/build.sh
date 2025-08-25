@@ -10,7 +10,8 @@ set -ouex pipefail
 # https://mirrors.rpmfusion.org/mirrorlist?path=free/fedora/updates/39/x86_64/repoview/index.html&protocol=https&redirect=1
 
 # this installs a package from fedora repos
-dnf5 install -y inkscape kitty krita
+dnf5 install -y inkscape kitty krita neovim
+dnf5 remove -y konsole kwrite
 
 # Use a COPR Example:
 #
