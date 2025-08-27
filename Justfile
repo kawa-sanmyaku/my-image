@@ -2,9 +2,9 @@ export image_name := env("IMAGE_NAME", "my-image") # output image name, usually 
 export default_tag := env("DEFAULT_TAG", "latest")
 export bib_image := env("BIB_IMAGE", "quay.io/centos-bootc/bootc-image-builder:latest")
 
-# alias build-vm := build-qcow2
-# alias rebuild-vm := rebuild-qcow2
-# alias run-vm := run-vm-qcow2
+alias build-vm := build-qcow2
+alias rebuild-vm := rebuild-qcow2
+alias run-vm := run-vm-qcow2
 
 [private]
 default:
