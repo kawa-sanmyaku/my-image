@@ -2,121 +2,136 @@ export image_name := env("IMAGE_NAME", "my-image") # output image name, usually 
 export default_tag := env("DEFAULT_TAG", "latest")
 export bib_image := env("BIB_IMAGE", "quay.io/centos-bootc/bootc-image-builder:latest")
 
-alias build-vm := build-qcow2
-alias rebuild-vm := rebuild-qcow2
-alias run-vm := run-vm-qcow2
+# alias build-vm := build-qcow2
+# alias rebuild-vm := rebuild-qcow2
+# alias run-vm := run-vm-qcow2
 
 [private]
 default:
-    @just --list
+	@just --list
 
-# Check Just Syntax
+# check just syntax
 [group('Just')]
 check:
-    #!/usr/bin/bash
-    find . -type f -name "*.just" | while read -r file; do
-    	echo "Checking syntax: $file"
-    	just --unstable --fmt --check -f $file
-    done
-    echo "Checking syntax: Justfile"
-    just --unstable --fmt --check -f Justfile
+	#!/usr/bin/bash
+	find . -type f -name "*.just" | while read -r file; do
+		echo "Checking syntax: $file"
+		just --unstable --fmt --check -f $file
+	done
+	echo "Checking syntax: Justfile"
+	just --unstable --fmt --check -f Justfile
 
-# Fix Just Syntax
+# fix just syntax
 [group('Just')]
 fix:
-    #!/usr/bin/bash
-    find . -type f -name "*.just" | while read -r file; do
-    	echo "Checking syntax: $file"
-    	just --unstable --fmt -f $file
-    done
-    echo "Checking syntax: Justfile"
-    just --unstable --fmt -f Justfile || { exit 1; }
+	#!/usr/bin/bash
+	find . -type f -name "*.just" | while read -r file; do
+		echo "Checking syntax: $file"
+		just --unstable --fmt -f $file
+	done
+	echo "Checking syntax: Justfile"
+	just --unstable --fmt -f Justfile || { exit 1; }
 
-# Clean Repo
+# clean repo
 [group('Utility')]
 clean:
-    #!/usr/bin/bash
-    set -eoux pipefail
-    touch _build
-    find *_build* -exec rm -rf {} \;
-    rm -f previous.manifest.json
-    rm -f changelog.md
-    rm -f output.env
-    rm -f output/
+	#!/usr/bin/bash
+	set -eoux pipefail
+	touch _build
+	find *_build* -exec rm -rf {} \;
+	rm -f previous.manifest.json
+	rm -f changelog.md
+	rm -f output.env
+	rm -f output/
 
-# Sudo Clean Repo
+# sudo clean repo
 [group('Utility')]
 [private]
 sudo-clean:
-    just sudoif just clean
+	just sudoif just clean
 
 # sudoif bash function
 [group('Utility')]
 [private]
 sudoif command *args:
-    #!/usr/bin/bash
-    function sudoif(){
-        if [[ "${UID}" -eq 0 ]]; then
-            "$@"
-        elif [[ "$(command -v sudo)" && -n "${SSH_ASKPASS:-}" ]] && [[ -n "${DISPLAY:-}" || -n "${WAYLAND_DISPLAY:-}" ]]; then
-            /usr/bin/sudo --askpass "$@" || exit 1
-        elif [[ "$(command -v sudo)" ]]; then
-            /usr/bin/sudo "$@" || exit 1
-        else
-            exit 1
-        fi
-    }
-    sudoif {{ command }} {{ args }}
+	#!/usr/bin/bash
+	function sudoif(){
+		if [[ "${UID}" -eq 0 ]]; then
+			"$@"
+		elif [[ "$(command -v sudo)" && -n "${SSH_ASKPASS:-}" ]] && [[ -n "${DISPLAY:-}" || -n "${WAYLAND_DISPLAY:-}" ]]; then
+			/usr/bin/sudo --askpass "$@" || exit 1
+		elif [[ "$(command -v sudo)" ]]; then
+			/usr/bin/sudo "$@" || exit 1
+		else
+			exit 1
+		fi
+	}
+	sudoif {{ command }} {{ args }}
 
-# This Justfile recipe builds a container image using Podman.
-#
-# Arguments:
-#   $target_image - The tag you want to apply to the image (default: $image_name).
-#   $tag - The tag for the image (default: $default_tag).
-#
-# The script constructs the version string using the tag and the current date.
-# If the git working directory is clean, it also includes the short SHA of the current HEAD.
-#
-# just build $target_image $tag
-#
-# Example usage:
-#   just build aurora lts
-#
-# This will build an image 'aurora:lts' with DX and GDX enabled.
-#
+### CODE FROM AURORA BEGINS HERE ###
 
-# Build the image using the specified parameters
-build $target_image=image_name $tag=default_tag:
-    #!/usr/bin/env bash
+    FLATPAK_DIR_SHORTNAME="default_flatpaks"
 
-    BUILD_ARGS=()
-    if [[ -z "$(git status -s)" ]]; then
-        BUILD_ARGS+=("--build-arg" "SHA_HEAD_SHORT=$(git rev-parse --short HEAD)")
+    # generate flatpak list
+    TEMP_FLATPAK_INSTALL_DIR="$(mktemp -d -p /tmp flatpak-XXXXX)"
+    flatpak_refs=()
+    while IFS= read -r line; do
+        flatpak_refs+=("$line")
+    done < "${FLATPAK_DIR_SHORTNAME}/flatpaks"
+
+    # generate install script for flatpaks
+    tee "${TEMP_FLATPAK_INSTALL_DIR}/install-flatpaks.sh"<<EOF
+    mkdir -p /flatpak/flatpak /flatpak/triggers
+    mkdir -p /var/tmp
+    chmod -R 1777 /var/tmp
+    flatpak config --system --set languages "*"
+    flatpak remote-delete --system fedora
+    flatpak remote-add --system --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+    flatpak install --system -y flathub ${flatpak_refs[@]}
+    ostree refs --repo=\${FLATPAK_SYSTEM_DIR}/repo | grep '^deploy/' | grep -v 'org\.freedesktop\.Platform\.openh264' | sed 's/^deploy\///g' > /output/flatpaks-with-deps
+    EOF
+
+    # Create Flatpak List with dependencies
+    flatpak_list_args=()
+    flatpak_list_args+=("--rm" "--privileged")
+    flatpak_list_args+=("--entrypoint" "/usr/bin/bash")
+    flatpak_list_args+=("--env" "FLATPAK_SYSTEM_DIR=/flatpak/flatpak")
+    flatpak_list_args+=("--env" "FLATPAK_TRIGGERSDIR=/flatpak/triggers")
+    flatpak_list_args+=("--volume" "$(realpath ./${build_dir}):/output")
+    flatpak_list_args+=("--volume" "${TEMP_FLATPAK_INSTALL_DIR}:/temp_flatpak_install_dir")
+    flatpak_list_args+=("${IMAGE_FULL}" /temp_flatpak_install_dir/install-flatpaks.sh)
+
+    if [[ ! -f "${build_dir}/flatpaks-with-deps" ]]; then
+        ${PODMAN} run "${flatpak_list_args[@]}"
+    else
+        echo "WARNING - Reusing previous determined flatpaks-with-deps"
     fi
 
-    podman build \
-        "${BUILD_ARGS[@]}" \
-        --pull=newer \
-        --tag "${target_image}:${tag}" \
-        .
+    if [[ "{{ pipeline }}" == "1" ]]; then
+    	${PODMAN} rmi ${IMAGE_FULL}
+    fi
 
-# Command: _rootful_load_image
-# Description: This script checks if the current user is root or running under sudo. If not, it attempts to resolve the image tag using podman inspect.
-#              If the image is found, it loads it into rootful podman. If the image is not found, it pulls it from the repository.
-#
-# Parameters:
-#   $target_image - The name of the target image to be loaded or pulled.
-#   $tag - The tag of the target image to be loaded or pulled. Default is 'default_tag'.
-#
-# Example usage:
-#   _rootful_load_image my_image latest
-#
-# Steps:
-# 1. Check if the script is already running as root or under sudo.
-# 2. Check if target image is in the non-root podman container storage)
-# 3. If the image is found, load it into rootful podman using podman scp.
-# 4. If the image is not found, pull it from the remote repository into reootful podman.
+    # List Flatpaks with Dependencies
+    cat "${build_dir}/flatpaks-with-deps"
 
+### CODE FROM AURORA ENDS HERE ###
+
+# build the image using the specified parameters
+build $target_image=image_name $tag=default_tag:
+	#!/usr/bin/env bash
+
+	BUILD_ARGS=()
+	if [[ -z "$(git status -s)" ]]; then
+		BUILD_ARGS+=("--build-arg" "SHA_HEAD_SHORT=$(git rev-parse --short HEAD)")
+	fi
+
+	podman build \
+		"${BUILD_ARGS[@]}" \
+		--pull=newer \
+		--tag "${target_image}:${tag}" \
+		.
+
+# what is any of this even for
 _rootful_load_image $target_image=image_name $tag=default_tag:
     #!/usr/bin/bash
     set -eoux pipefail
@@ -149,15 +164,7 @@ _rootful_load_image $target_image=image_name $tag=default_tag:
         just sudoif podman pull "${target_image}:${tag}"
     fi
 
-# Build a bootc bootable image using Bootc Image Builder (BIB)
-# Converts a container image to a bootable image
-# Parameters:
-#   target_image: The name of the image to build (ex. localhost/fedora)
-#   tag: The tag of the image to build (ex. latest)
-#   type: The type of image to build (ex. qcow2, raw, iso)
-#   config: The configuration file to use for the build (default: disk_config/disk.toml)
-
-# Example: just _rebuild-bib localhost/fedora latest qcow2 disk_config/disk.toml
+# converts a container image to a bootable image
 _build-bib $target_image $tag $type $config: (_rootful_load_image target_image tag)
     #!/usr/bin/env bash
     set -euo pipefail
