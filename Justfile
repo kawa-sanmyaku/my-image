@@ -68,54 +68,6 @@ sudoif command *args:
 	}
 	sudoif {{ command }} {{ args }}
 
-### CODE FROM AURORA BEGINS HERE ###
-
-    FLATPAK_DIR_SHORTNAME="default_flatpaks"
-
-    # generate flatpak list
-    TEMP_FLATPAK_INSTALL_DIR="$(mktemp -d -p /tmp flatpak-XXXXX)"
-    flatpak_refs=()
-    while IFS= read -r line; do
-        flatpak_refs+=("$line")
-    done < "${FLATPAK_DIR_SHORTNAME}/flatpaks"
-
-    # generate install script for flatpaks
-    tee "${TEMP_FLATPAK_INSTALL_DIR}/install-flatpaks.sh"<<EOF
-    mkdir -p /flatpak/flatpak /flatpak/triggers
-    mkdir -p /var/tmp
-    chmod -R 1777 /var/tmp
-    flatpak config --system --set languages "*"
-    flatpak remote-delete --system fedora
-    flatpak remote-add --system --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-    flatpak install --system -y flathub ${flatpak_refs[@]}
-    ostree refs --repo=\${FLATPAK_SYSTEM_DIR}/repo | grep '^deploy/' | grep -v 'org\.freedesktop\.Platform\.openh264' | sed 's/^deploy\///g' > /output/flatpaks-with-deps
-    EOF
-
-    # Create Flatpak List with dependencies
-    flatpak_list_args=()
-    flatpak_list_args+=("--rm" "--privileged")
-    flatpak_list_args+=("--entrypoint" "/usr/bin/bash")
-    flatpak_list_args+=("--env" "FLATPAK_SYSTEM_DIR=/flatpak/flatpak")
-    flatpak_list_args+=("--env" "FLATPAK_TRIGGERSDIR=/flatpak/triggers")
-    flatpak_list_args+=("--volume" "$(realpath ./${build_dir}):/output")
-    flatpak_list_args+=("--volume" "${TEMP_FLATPAK_INSTALL_DIR}:/temp_flatpak_install_dir")
-    flatpak_list_args+=("${IMAGE_FULL}" /temp_flatpak_install_dir/install-flatpaks.sh)
-
-    if [[ ! -f "${build_dir}/flatpaks-with-deps" ]]; then
-        ${PODMAN} run "${flatpak_list_args[@]}"
-    else
-        echo "WARNING - Reusing previous determined flatpaks-with-deps"
-    fi
-
-    if [[ "{{ pipeline }}" == "1" ]]; then
-    	${PODMAN} rmi ${IMAGE_FULL}
-    fi
-
-    # List Flatpaks with Dependencies
-    cat "${build_dir}/flatpaks-with-deps"
-
-### CODE FROM AURORA ENDS HERE ###
-
 # build the image using the specified parameters
 build $target_image=image_name $tag=default_tag:
 	#!/usr/bin/env bash
@@ -193,6 +145,54 @@ _build-bib $target_image $tag $type $config: (_rootful_load_image target_image t
     sudo mv -f $BUILDTMP/* output/
     sudo rmdir $BUILDTMP
     sudo chown -R $USER:$USER output/
+
+### CODE FROM AURORA BEGINS HERE ###
+
+    FLATPAK_DIR_SHORTNAME="default_flatpaks"
+
+    # generate flatpak list
+    TEMP_FLATPAK_INSTALL_DIR="$(mktemp -d -p /tmp flatpak-XXXXX)"
+    flatpak_refs=()
+    while IFS= read -r line; do
+        flatpak_refs+=("$line")
+    done < "${FLATPAK_DIR_SHORTNAME}/flatpaks"
+
+    # generate install script for flatpaks
+    tee "${TEMP_FLATPAK_INSTALL_DIR}/install-flatpaks.sh"<<EOF
+    mkdir -p /flatpak/flatpak /flatpak/triggers
+    mkdir -p /var/tmp
+    chmod -R 1777 /var/tmp
+    flatpak config --system --set languages "*"
+    flatpak remote-delete --system fedora
+    flatpak remote-add --system --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+    flatpak install --system -y flathub ${flatpak_refs[@]}
+    ostree refs --repo=\${FLATPAK_SYSTEM_DIR}/repo | grep '^deploy/' | grep -v 'org\.freedesktop\.Platform\.openh264' | sed 's/^deploy\///g' > /output/flatpaks-with-deps
+    EOF
+
+    # Create Flatpak List with dependencies
+    flatpak_list_args=()
+    flatpak_list_args+=("--rm" "--privileged")
+    flatpak_list_args+=("--entrypoint" "/usr/bin/bash")
+    flatpak_list_args+=("--env" "FLATPAK_SYSTEM_DIR=/flatpak/flatpak")
+    flatpak_list_args+=("--env" "FLATPAK_TRIGGERSDIR=/flatpak/triggers")
+    flatpak_list_args+=("--volume" "$(realpath ./${build_dir}):/output")
+    flatpak_list_args+=("--volume" "${TEMP_FLATPAK_INSTALL_DIR}:/temp_flatpak_install_dir")
+    flatpak_list_args+=("${IMAGE_FULL}" /temp_flatpak_install_dir/install-flatpaks.sh)
+
+    if [[ ! -f "${build_dir}/flatpaks-with-deps" ]]; then
+        ${PODMAN} run "${flatpak_list_args[@]}"
+    else
+        echo "WARNING - Reusing previous determined flatpaks-with-deps"
+    fi
+
+    if [[ "{{ pipeline }}" == "1" ]]; then
+    	${PODMAN} rmi ${IMAGE_FULL}
+    fi
+
+    # List Flatpaks with Dependencies
+    cat "${build_dir}/flatpaks-with-deps"
+
+### CODE FROM AURORA ENDS HERE ###
 
 # Podman builds the image from the Containerfile and creates a bootable image
 # Parameters:
