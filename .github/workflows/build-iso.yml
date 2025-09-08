@@ -86,7 +86,7 @@ jobs:
           flatpak_remote_refs: app/org.gimp.GIMP
           # arch: ${{ env.ARCH}}
           image_name: ${{ env.IMAGE_NAME }}
-          image_repo: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
+          image_repo: ${{ env.IMAGE_REGISTRY }}
           image_tag: ${{ env.DEFAULT_TAG }}
           # version: ${{ env.VERSION }}
           # variant: ${{ env.VARIANT }}
