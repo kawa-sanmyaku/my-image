@@ -90,7 +90,7 @@ jobs:
           image_tag: ${{ env.DEFAULT_TAG }}
           # version: ${{ env.VERSION }}
           # variant: ${{ env.VARIANT }}
-          iso_name: ${{ env.IMAGE_NAME }}-${{ env.DEFAULT_TAG }}-${{date 'YYYYMMDD'}}.iso
+          iso_name: ${{ env.IMAGE_NAME }}-${{ env.DEFAULT_TAG }}.iso
 
       - name: Upload ISO as artifact
         id: upload
