@@ -93,7 +93,6 @@ jobs:
           flatpak_remote_name: flathub
           flatpak_remote_url: https://flathub.org/repo/flathub.flatpakrepo
           flatpak_remote_refs: app/org.gimp.GIMP
-          # enable_flatpak_dependencies: "false" # test this
 
       - name: Upload ISO as artifact
         id: upload
