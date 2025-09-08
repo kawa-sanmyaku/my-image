@@ -81,16 +81,19 @@ jobs:
         uses: jasonn3/build-container-installer@main
         id: build
         with:
+          arch: x86_64
+          image_name: ${{ env.IMAGE_NAME }}
+          image_repo: ${{ env.IMAGE_REGISTRY }}
+          # variant: ${{ env.VARIANT }}
+          # version: ${{ env.VERSION }}
+          image_tag: ${{ env.DEFAULT_TAG }}
+          iso_name: install-${{ env.IMAGE_NAME }}-${{ env.DEFAULT_TAG }}.iso
+          enable_cache_dnf: "false"
+          enable_cache_skopeo: "false" # not sure what this disables but adding it just in case
           flatpak_remote_name: flathub
           flatpak_remote_url: https://flathub.org/repo/flathub.flatpakrepo
           flatpak_remote_refs: app/org.gimp.GIMP
-          # arch: ${{ env.ARCH}}
-          image_name: ${{ env.IMAGE_NAME }}
-          image_repo: ${{ env.IMAGE_REGISTRY }}
-          image_tag: ${{ env.DEFAULT_TAG }}
-          # version: ${{ env.VERSION }}
-          # variant: ${{ env.VARIANT }}
-          iso_name: install-${{ env.IMAGE_NAME }}-${{ env.DEFAULT_TAG }}.iso
+          enable_flatpak_dependencies: "false" # test this
 
       - name: Upload ISO as artifact
         id: upload
