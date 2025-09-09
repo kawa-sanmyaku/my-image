@@ -77,8 +77,33 @@ jobs:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
 
+      - name: Determine Flatpak Dependencies
+        id: flatpak_dependencies
+        shell: bash
+        run: |
+          set -ex
+          image="${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
+          TEMP_FLATPAK_INSTALL_DIR=$(mktemp -d -p ${{ github.workspace }} flatpak.XXX)
+          cat << EOF > ${TEMP_FLATPAK_INSTALL_DIR}/script.sh
+          cat /temp_flatpak_install_dir/script.sh
+          mkdir -p /flatpak/flatpak /flatpak/triggers
+          mkdir /var/tmp || true
+          chmod -R 1777 /var/tmp
+          flatpak config --system --set languages "*"
+          flatpak remote-add --system flathub https://flathub.org/repo/flathub.flatpakrepo
+          flatpak install --system -y org.gimp.GIMP
+          ostree refs --repo=\${FLATPAK_SYSTEM_DIR}/repo | grep '^deploy/' | grep -v 'org\.freedesktop\.Platform\.openh264' | sed 's/^deploy\///g' > /output/flatpaks_with_deps
+          EOF
+          docker run --rm --privileged \
+            --entrypoint bash \
+            -e FLATPAK_SYSTEM_DIR=/flatpak/flatpak \
+            -e FLATPAK_TRIGGERSDIR=/flatpak/triggers \
+            --volume ${TEMP_FLATPAK_INSTALL_DIR}:/temp_flatpak_install_dir \
+            ${image} /temp_flatpak_install_dir/script.sh
+          docker rmi ${image}
+
       - name: Build ISO
-        uses: jasonn3/build-container-installer@main
+        uses: jasonn3/build-container-installer@f09a756b7a1205f121d8508f1171759328b95d2c # v1.2.4
         id: build
         with:
           arch: x86_64
@@ -90,9 +115,10 @@ jobs:
           iso_name: install-${{ env.IMAGE_NAME }}-${{ env.DEFAULT_TAG }}.iso
           enable_cache_dnf: "false"
           enable_cache_skopeo: "false" # not sure what this disables but adding it just in case
-          flatpak_remote_name: flathub
-          flatpak_remote_url: https://flathub.org/repo/flathub.flatpakrepo
+          # flatpak_remote_name: flathub
+          # flatpak_remote_url: https://flathub.org/repo/flathub.flatpakrepo
           flatpak_remote_refs: app/org.gimp.GIMP
+          enable_flatpak_dependencies: "false"
 
       - name: Upload ISO as artifact
         id: upload
