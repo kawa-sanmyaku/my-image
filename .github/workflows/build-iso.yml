@@ -120,7 +120,7 @@ jobs:
           image_name: ${{ env.IMAGE_NAME }}
           image_repo: ${{ env.IMAGE_REGISTRY }}
           # variant: ${{ env.VARIANT }}
-          # version: ${{ env.VERSION }}
+          version: 42
           image_tag: ${{ env.DEFAULT_TAG }}
           iso_name: install-${{ env.IMAGE_NAME }}-${{ env.DEFAULT_TAG }}.iso
           enable_cache_dnf: "false"
