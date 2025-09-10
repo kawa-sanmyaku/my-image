@@ -77,6 +77,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
 
+      - name: Set Flatpaks Directory Shortname
+        id: generate-flatpak-dir-shortname
+        shell: bash
+        run: |
+          FLATPAK_DIR_SHORTNAME="iso/user_flatpaks"
+          echo "flatpak-dir-shortname=${FLATPAK_DIR_SHORTNAME}" >> $GITHUB_OUTPUT
+
       - name: Determine Flatpak Dependencies
         id: flatpak_dependencies
         shell: bash
@@ -84,6 +91,8 @@ jobs:
           set -ex
           image="${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
           TEMP_FLATPAK_INSTALL_DIR=$(mktemp -d -p ${{ github.workspace }} flatpak.XXX)
+          FLATPAK_REFS_DIR=${{ github.workspace }}/${{ steps.generate-flatpak-dir-shortname.outputs.flatpak-dir-shortname }}
+          FLATPAK_REFS_DIR_LIST=$(cat ${FLATPAK_REFS_DIR}/* | tr '\n' ' ' )
           cat << EOF > ${TEMP_FLATPAK_INSTALL_DIR}/script.sh
           cat /temp_flatpak_install_dir/script.sh
           mkdir -p /flatpak/flatpak /flatpak/triggers
@@ -91,13 +100,14 @@ jobs:
           chmod -R 1777 /var/tmp
           flatpak config --system --set languages "*"
           flatpak remote-add --system flathub https://flathub.org/repo/flathub.flatpakrepo
-          flatpak install --system -y org.gimp.GIMP
+          flatpak install --system -y ${FLATPAK_REFS_DIR_LIST}
           ostree refs --repo=\${FLATPAK_SYSTEM_DIR}/repo | grep '^deploy/' | grep -v 'org\.freedesktop\.Platform\.openh264' | sed 's/^deploy\///g' > /output/flatpaks_with_deps
           EOF
           docker run --rm --privileged \
             --entrypoint bash \
             -e FLATPAK_SYSTEM_DIR=/flatpak/flatpak \
             -e FLATPAK_TRIGGERSDIR=/flatpak/triggers \
+            --volume ${FLATPAK_REFS_DIR}:/output \
             --volume ${TEMP_FLATPAK_INSTALL_DIR}:/temp_flatpak_install_dir \
             ${image} /temp_flatpak_install_dir/script.sh
           docker rmi ${image}
@@ -117,7 +127,7 @@ jobs:
           enable_cache_skopeo: "false" # not sure what this disables but adding it just in case
           # flatpak_remote_name: flathub
           # flatpak_remote_url: https://flathub.org/repo/flathub.flatpakrepo
-          flatpak_remote_refs: app/org.gimp.GIMP
+          flatpak_remote_refs_dir: ${{ steps.generate-flatpak-dir-shortname.outputs.flatpak-dir-shortname }}
           enable_flatpak_dependencies: "false"
 
       - name: Upload ISO as artifact
