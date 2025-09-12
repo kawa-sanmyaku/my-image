@@ -4,11 +4,6 @@ name: Build ISO
 on:
   workflow_dispatch:
     inputs:
-      upload-to-s3:
-        description: "Upload to S3"
-        required: false
-        default: false
-        type: boolean
       platform:
         required: true
         type: choice
@@ -118,16 +113,14 @@ jobs:
           arch: x86_64
           image_name: ${{ env.IMAGE_NAME }}
           image_repo: ${{ env.IMAGE_REGISTRY }}
-          # variant: ${{ env.VARIANT }}
+          variant: kinoite
           version: 41
           image_tag: ${{ env.DEFAULT_TAG }}
           iso_name: install-${{ env.IMAGE_NAME }}-${{ env.DEFAULT_TAG }}.iso
           enable_cache_dnf: "false"
           enable_cache_skopeo: "false" # not sure what this disables but adding it just in case
-          # flatpak_remote_name: flathub
-          # flatpak_remote_url: https://flathub.org/repo/flathub.flatpakrepo
           flatpak_remote_refs_dir: ${{ steps.generate-flatpak-dir-shortname.outputs.flatpak-dir-shortname }}
-          enable_flatpak_dependencies: "false"
+          enable_flatpak_dependencies: "true"
 
       - name: Upload ISO as artifact
         id: upload
