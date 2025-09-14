@@ -107,20 +107,21 @@ jobs:
           docker rmi ${image}
 
       - name: Build ISO
-        uses: jasonn3/build-container-installer@f09a756b7a1205f121d8508f1171759328b95d2c # v1.2.4
+        uses: jasonn3/build-container-installer@main
         id: build
         with:
           arch: x86_64
           image_name: ${{ env.IMAGE_NAME }}
           image_repo: ${{ env.IMAGE_REGISTRY }}
-          variant: kinoite
-          version: 41
           image_tag: ${{ env.DEFAULT_TAG }}
           iso_name: install-${{ env.IMAGE_NAME }}-${{ env.DEFAULT_TAG }}.iso
+          variant: kinoite
+          version: 41
           enable_cache_dnf: "false"
-          enable_cache_skopeo: "false" # not sure what this disables but adding it just in case
-          flatpak_remote_refs_dir: ${{ steps.generate-flatpak-dir-shortname.outputs.flatpak-dir-shortname }}
+          enable_cache_skopeo: "false"
           enable_flatpak_dependencies: "false"
+          flatpak_remote_refs_dir: ${{ steps.generate-flatpak-dir-shortname.outputs.flatpak-dir-shortname }}
+          rootfs_size: 3
 
       - name: Upload ISO as artifact
         id: upload
