@@ -120,7 +120,7 @@ jobs:
           enable_cache_dnf: "false"
           enable_cache_skopeo: "false" # not sure what this disables but adding it just in case
           flatpak_remote_refs_dir: ${{ steps.generate-flatpak-dir-shortname.outputs.flatpak-dir-shortname }}
-          enable_flatpak_dependencies: "true"
+          enable_flatpak_dependencies: "false"
 
       - name: Upload ISO as artifact
         id: upload
