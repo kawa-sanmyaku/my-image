@@ -5,7 +5,7 @@ set -ouex pipefail
 dnf5 remove -y firefox konsole
 
 # install packages
-dnf5 install -y kitty papirus-icon-theme
+dnf5 install -y kitty neovim papirus-icon-theme
 
 # example using copr
 # dnf5 -y copr enable ublue-os/staging
