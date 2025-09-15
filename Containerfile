@@ -2,9 +2,6 @@
 FROM scratch AS ctx
 COPY build_files /
 
-# copy system_files
-COPY system_files /
-
 # base image
 FROM ghcr.io/ublue-os/kinoite-nvidia:latest
 
@@ -16,6 +13,9 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     mkdir -p /var/roothome && \
     /ctx/build.sh && \
     ostree container commit
-    
+
+# copy system_files
+COPY system_files /
+
 # verify final image and contents are correct.
 RUN bootc container lint
