@@ -1,5 +1,5 @@
 ---
-name: Build ISO
+name: Build disk images with flatpaks
 
 on:
   workflow_dispatch:
