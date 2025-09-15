@@ -3,4 +3,4 @@ TerminalApplication=kitty
 TerminalService=kitty.desktop
 
 [KDE]
-LookAndFeelPackage=breeze-dark
+LookAndFeelPackage=Breeze-Dark

@@ -2,11 +2,11 @@
 FROM scratch AS ctx
 COPY build_files /
 
-# base image
-FROM ghcr.io/ublue-os/kinoite-nvidia:latest
-
 # copy system_files
 COPY system_files /
+
+# base image
+FROM ghcr.io/ublue-os/kinoite-nvidia:latest
 
 # modifications
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
