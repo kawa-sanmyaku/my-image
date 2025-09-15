@@ -1,0 +1,6 @@
+[General]
+TerminalApplication=kitty
+TerminalService=kitty.desktop
+
+[KDE]
+LookAndFeelPackage=breeze-dark

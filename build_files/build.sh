@@ -1,8 +1,11 @@
 #!/bin/bash
 set -ouex pipefail
 
-# use flatpak of firefox instead
-dnf5 remove -y firefox
+# use flatpak of firefox instead, remove other packages
+dnf5 remove -y firefox konsole
+
+# install packages
+dnf5 install -y kitty papirus-icon-theme
 
 # example using copr
 # dnf5 -y copr enable ublue-os/staging
