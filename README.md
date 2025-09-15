@@ -2,7 +2,7 @@
 
 [WIP]
 
-Primary files to customize
+Primary files to customize:
 - .github/workflows/build-disk-with-flatpaks.yml
 - build_files/build.sh
 - disk/user_flatpaks
