@@ -9,7 +9,4 @@ Primary files to customize:
 - Containerfile
 
 Note to self:
-- Don't change anything in disk_config directory (yet)
-- Don't change anything in Justfile (yet, try deleting it to see what happens)
-- Don't change anything in .github directory except the new custom workflow
-- Eventually replace custom workflow with Titanoboa
+- LEAVE EVERYTHING ELSE UNTOUCHED! It just works...
