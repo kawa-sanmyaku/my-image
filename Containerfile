@@ -5,6 +5,9 @@ COPY build_files /
 # base image
 FROM ghcr.io/ublue-os/kinoite-nvidia:latest
 
+# copy system_files
+COPY system_files /
+
 # modifications
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=cache,dst=/var/cache \
