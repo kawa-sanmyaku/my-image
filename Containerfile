@@ -3,7 +3,7 @@ FROM scratch AS ctx
 COPY build_files /
 
 # base image
-FROM ghcr.io/ublue-os/kinoite-nvidia:latest
+FROM ghcr.io/ublue-os/bazzite-nvidia:latest
 
 # modifications
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
