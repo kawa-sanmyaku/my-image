@@ -10,3 +10,4 @@ Primary files to customize:
 
 Note to self:
 - LEAVE EVERYTHING ELSE UNTOUCHED! It just works...
+- Rebase to kinoite-main once I figure out how to install NVIDIA drivers
